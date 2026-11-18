@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  CONTRACT for app.js — IDs, classes and conventions provided by this shell
+  ==========================================================================
+  BOARD
+    #board  <main> container. Column/row counts come from CSS vars --cols / --rows
+            (inline style pre-seeds --cols:9; --rows:9; keep them when rebuilding).
+    .cell   one div per grid slot. 81 placeholders (.cell.covered) are pre-seeded
+            for the 9x9 Beginner default; app.js may rebuild the children at runtime.
+    Cell state classes — all applied ON the .cell element itself:
+      .covered   raised bevel, not yet revealed (initial placeholder state)
+      .revealed  sunken flat; when the cell shows a number it ALSO carries .n1..n8
+                 and its textContent is the digit string (style.css colors .cell.n1-.n8)
+      .pressed   transient "mouse held down" look (combined with .covered)
+      .flagged   covered + red flag glyph (SVG data-URI background, no textContent)
+      .question  covered + blue "?" drawn purely by CSS ::after (no textContent)
+      .mine      revealed mine glyph
+      .exploded  detonated mine on red background
+      .wrongflag wrongly flagged cell: mine crossed out with a red X
+  STATUS PANEL
+    #mine-counter, #timer  LED holders (sunken black insets), each holding exactly 3
+      .digit spans: <span class="digit" data-digit="0"> with 7 <span class="seg a..g">
+      children. To display a value set each digit's data-digit attribute to "0".."9"
+      or "-" (minus). style.css lights the correct segments per data-digit — the
+      .seg children and their .on/.off classes never need to be touched by app.js.
+    #smiley  restart button (26x26 raised bevel). Draw face purely by CSS: swap ONLY
+      the state class between .normal | .ooh | .dead | .cool.
+  MENU BAR
+    .menu-trigger (Game / Help) with aria-haspopup="true"; app.js toggles aria-expanded
+      and the `hidden` attribute of the adjacent <ul class="menu" role="menu">.
+    Items are <button role="menuitem" data-action="..."> with actions:
+      Game: new | beginner | intermediate | expert | custom | marks | best | exit
+      Help: help | about
+    The "marks" item carries aria-checked="true" (question-mark cycling on/off);
+    its <span class="check"> column renders the visible checkmark (width reserved
+    on every item for alignment). <li class="sep"> rows are inert separators.
+  DIALOGS — every dialog is <div class="dialog" hidden>; app.js toggles `hidden`.
+    #dialog-custom  inputs: #custom-height (8-24, default 16), #custom-width
+                    (8-30, default 16), #custom-mines (min 10, default 40; upper
+                    bound w*h-1 is enforced by app.js, no max attribute present);
+                    buttons #custom-ok, #custom-cancel.
+    #dialog-best    rows #best-beginner / #best-intermediate / #best-expert, each
+                    holding <span class="best-time"> and <span class="best-name">;
+                    buttons #best-reset, #best-ok.
+    #dialog-about   static text; close via #about-ok.
+    #dialog-help    static text; close via #help-ok.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minesweeper</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="window">
+  <header class="title-bar">
+    <span class="title">Minesweeper</span>
+    <div class="title-buttons">
+      <button type="button" class="win-btn" tabindex="-1" aria-label="Minimize">_</button>
+      <button type="button" class="win-btn" tabindex="-1" aria-label="Maximize">&#9633;</button>
+      <button type="button" class="win-btn" tabindex="-1" aria-label="Close">&#10005;</button>
+    </div>
+  </header>
+
+  <nav class="menu-bar" aria-label="Main menu">
+    <div class="menu-wrap">
+      <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Game</button>
+      <ul class="menu" role="menu" hidden>
+        <li><button type="button" role="menuitem" data-action="new"><span class="check" aria-hidden="true"></span>New</button></li>
+        <li class="sep" aria-hidden="true"></li>
+        <li><button type="button" role="menuitem" data-action="beginner"><span class="check" aria-hidden="true"></span>Beginner</button></li>
+        <li><button type="button" role="menuitem" data-action="intermediate"><span class="check" aria-hidden="true"></span>Intermediate</button></li>
+        <li><button type="button" role="menuitem" data-action="expert"><span class="check" aria-hidden="true"></span>Expert</button></li>
+        <li><button type="button" role="menuitem" data-action="custom"><span class="check" aria-hidden="true"></span>Custom&#8230;</button></li>
+        <li class="sep" aria-hidden="true"></li>
+        <li><button type="button" role="menuitem" data-action="marks" aria-checked="true"><span class="check" aria-hidden="true">&#10003;</span>Marks (?)</button></li>
+        <li><button type="button" role="menuitem" data-action="best"><span class="check" aria-hidden="true"></span>Best Times&#8230;</button></li>
+        <li class="sep" aria-hidden="true"></li>
+        <li><button type="button" role="menuitem" data-action="exit"><span class="check" aria-hidden="true"></span>Exit</button></li>
+      </ul>
+    </div>
+    <div class="menu-wrap">
+      <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Help</button>
+      <ul class="menu" role="menu" hidden>
+        <li><button type="button" role="menuitem" data-action="help"><span class="check" aria-hidden="true"></span>How to Play&#8230;</button></li>
+        <li><button type="button" role="menuitem" data-action="about"><span class="check" aria-hidden="true"></span>About Minesweeper&#8230;</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="status-panel sunken" aria-label="Status panel">
+    <div class="led" id="mine-counter" role="img" aria-label="Mines remaining">
+      <span class="digit" data-digit="0"><span class="seg a on"></span><span class="seg b on"></span><span class="seg c on"></span><span class="seg d on"></span><span class="seg e on"></span><span class="seg f on"></span><span class="seg g off"></span></span>
+      <span class="digit" data-digit="1"><span class="seg a off"></span><span class="seg b on"></span><span class="seg c on"></span><span class="seg d off"></span><span class="seg e off"></span><span class="seg f off"></span><span class="seg g off"></span></span>
+      <span class="digit" data-digit="0"><span class="seg a on"></span><span class="seg b on"></span><span class="seg c on"></span><span class="seg d on"></span><span class="seg e on"></span><span class="seg f on"></span><span class="seg g off"></span></span>
+    </div>
+    <button type="button" id="smiley" class="smiley normal" aria-label="New game"></button>
+    <div class="led" id="timer" role="img" aria-label="Time elapsed">
+      <span class="digit" data-digit="0"><span class="seg a on"></span><span class="seg b on"></span><span class="seg c on"></span><span class="seg d on"></span><span class="seg e on"></span><span class="seg f on"></span><span class="seg g off"></span></span>
+      <span class="digit" data-digit="0"><span class="seg a on"></span><span class="seg b on"></span><span class="seg c on"></span><span class="seg d on"></span><span class="seg e on"></span><span class="seg f on"></span><span class="seg g off"></span></span>
+      <span class="digit" data-digit="0"><span class="seg a on"></span><span class="seg b on"></span><span class="seg c on"></span><span class="seg d on"></span><span class="seg e on"></span><span class="seg f on"></span><span class="seg g off"></span></span>
+    </div>
+  </section>
+
+  <main id="board" class="board" style="--cols:9; --rows:9;" aria-label="Minefield">
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+    <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
+  </main>
+</div>
+
+<div class="dialog" id="dialog-custom" role="dialog" aria-modal="true" aria-labelledby="dialog-custom-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="dialog-custom-title">Custom Field</span></header>
+    <div class="dialog-body">
+      <div class="dialog-fields">
+        <label>Height <input type="number" id="custom-height" min="8" max="24" value="16" required></label>
+        <label>Width <input type="number" id="custom-width" min="8" max="30" value="16" required></label>
+        <label>Mines <input type="number" id="custom-mines" min="10" value="40" required></label>
+      </div>
+      <div class="dialog-buttons">
+        <button type="button" id="custom-ok">OK</button>
+        <button type="button" id="custom-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dialog" id="dialog-best" role="dialog" aria-modal="true" aria-labelledby="dialog-best-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="dialog-best-title">Fastest Mine Sweepers</span></header>
+    <div class="dialog-body">
+      <ul class="best-list">
+        <li id="best-beginner"><span class="best-label">Beginner:</span><span class="best-time">999</span><span class="best-name">Anonymous</span></li>
+        <li id="best-intermediate"><span class="best-label">Intermediate:</span><span class="best-time">999</span><span class="best-name">Anonymous</span></li>
+        <li id="best-expert"><span class="best-label">Expert:</span><span class="best-time">999</span><span class="best-name">Anonymous</span></li>
+      </ul>
+      <div class="dialog-buttons">
+        <button type="button" id="best-reset">Reset</button>
+        <button type="button" id="best-ok">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dialog" id="dialog-about" role="dialog" aria-modal="true" aria-labelledby="dialog-about-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="dialog-about-title">About Minesweeper</span></header>
+    <div class="dialog-body">
+      <p class="dialog-text">Minesweeper</p>
+      <p class="dialog-text">A faithful recreation of the 1992 Windows 3.1 classic, built with vanilla HTML, CSS and JavaScript. No frameworks, no external assets, no network dependencies.</p>
+      <p class="dialog-text">Clear the minefield without detonating a mine. The numbers tell you how many mines touch each square.</p>
+      <div class="dialog-buttons">
+        <button type="button" id="about-ok">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dialog" id="dialog-help" role="dialog" aria-modal="true" aria-labelledby="dialog-help-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="dialog-help-title">How to Play</span></header>
+    <div class="dialog-body">
+      <div class="dialog-text">
+        <p><strong>Goal:</strong> reveal every square that does not hide a mine.</p>
+        <ul>
+          <li><strong>Left-click</strong> a covered square to reveal it. The first reveal is always safe.</li>
+          <li>A revealed <strong>number</strong> counts the mines in the 8 surrounding squares.</li>
+          <li><strong>Right-click</strong> a covered square to cycle: flag &#8594; question mark &#8594; covered. Flags mark suspected mines; turn off &quot;Marks (?)&quot; in the Game menu to skip the question mark.</li>
+          <li><strong>Chord:</strong> left-click a revealed number whose flag count already matches it to reveal its remaining neighbors at once.</li>
+          <li>The <strong>smiley</strong> starts a new game in any situation.</li>
+          <li>Difficulties: Beginner 9&#215;9 with 10 mines, Intermediate 16&#215;16 with 40 mines, Expert 30&#215;16 with 99 mines, plus Custom.</li>
+        </ul>
+      </div>
+      <div class="dialog-buttons">
+        <button type="button" id="help-ok">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,508 @@
+/* Minesweeper (1992 Windows 3.1 clone) — all chrome, bevels, LEDs, glyphs.
+   No external assets. Cell glyphs are inline SVG data URIs; the smiley and
+   question mark are pure CSS. See the CONTRACT comment in index.html. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --face: #c0c0c0;
+  --light: #ffffff;
+  --light2: #dfdfdf;
+  --dark: #808080;
+  --dark2: #404040;
+  --desktop: #008080;
+  --title1: #000080;
+  --title2: #1084d0;
+  --led-on: #ff0000;
+  --led-off: #300000;
+}
+
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  display: grid;
+  place-content: center;
+  min-block-size: 100dvb;
+  background: var(--desktop);
+  font-family: Tahoma, 'MS Sans Serif', Geneva, sans-serif;
+  font-size: 11px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+
+/* ---------------------------------------------------------------- bevels */
+
+.raised {
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--light) var(--dark2) var(--dark2) var(--light);
+  box-shadow: inset 1px 1px 0 var(--light2), inset -1px -1px 0 var(--dark);
+}
+
+.sunken {
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: inset 1px 1px 0 var(--dark), inset -1px -1px 0 var(--light2);
+}
+
+.raised:active, .raised.pressed {
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: inset 1px 1px 0 var(--dark);
+}
+
+/* --------------------------------------------------------------- window */
+
+.window {
+  background: var(--face);
+  border: 3px solid;
+  border-color: var(--light) var(--dark2) var(--dark2) var(--light);
+  box-shadow:
+    inset 1px 1px 0 var(--light2),
+    inset -1px -1px 0 var(--dark),
+    2px 2px 6px rgba(0, 0, 0, 0.35);
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  inline-size: max-content;
+  max-inline-size: calc(100dvi - 16px);
+}
+
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 3px 2px 6px;
+  background: linear-gradient(90deg, var(--title1), var(--title2));
+  color: #ffffff;
+  user-select: none;
+}
+
+.title-bar .title {
+  font-weight: bold;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.title-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.win-btn {
+  inline-size: 16px;
+  block-size: 14px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  background: var(--face);
+  color: #000000;
+  border: 1px solid;
+  border-color: var(--light) var(--dark2) var(--dark2) var(--light);
+  box-shadow: inset 1px 1px 0 var(--light2), inset -1px -1px 0 var(--dark);
+}
+
+/* ---------------------------------------------------------------- menus */
+
+.menu-bar {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 1px;
+  user-select: none;
+}
+
+.menu-wrap { position: relative; }
+
+.menu-trigger {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 1px 7px;
+}
+
+.menu-trigger:hover,
+.menu-trigger:focus-visible {
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+}
+
+.menu-trigger[aria-expanded="true"] {
+  background: var(--face);
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: inset 1px 1px 0 var(--dark);
+}
+
+.menu {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  min-inline-size: 150px;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid;
+  border-color: var(--light2) var(--dark2) var(--dark2) var(--light2);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.menu li button {
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  padding: 3px 10px 3px 0;
+  text-align: start;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+}
+
+.menu li button:hover,
+.menu li button:focus-visible {
+  background: var(--title1);
+  color: #ffffff;
+}
+
+.menu .check {
+  inline-size: 16px;
+  flex: none;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.menu .sep {
+  block-size: 2px;
+  margin: 3px 2px;
+  border-top: 1px solid var(--dark);
+  border-bottom: 1px solid var(--light);
+  padding: 0;
+}
+
+/* --------------------------------------------------------- status panel */
+
+.status-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+}
+
+/* ------------------------------------------------------------------ LEDs */
+
+.led {
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+  background: #000000;
+  border: 1px solid;
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+}
+
+.digit {
+  position: relative;
+  display: block;
+  inline-size: 13px;
+  block-size: 23px;
+  background: #000000;
+}
+
+.seg {
+  position: absolute;
+  display: block;
+  background: var(--led-off);
+}
+
+.seg.on { background: var(--led-on); }
+
+.seg.a { top: 1px;    left: 2px;  inline-size: 9px; block-size: 3px; }
+.seg.b { top: 3px;    left: 10px; inline-size: 3px; block-size: 8px; }
+.seg.c { top: 13px;   left: 10px; inline-size: 3px; block-size: 8px; }
+.seg.d { top: 20px;   left: 2px;  inline-size: 9px; block-size: 3px; }
+.seg.e { top: 13px;   left: 0;    inline-size: 3px; block-size: 8px; }
+.seg.f { top: 3px;    left: 0;    inline-size: 3px; block-size: 8px; }
+.seg.g { top: 10px;   left: 2px;  inline-size: 9px; block-size: 3px; }
+
+/* lit segments per displayed character (app.js only sets data-digit) */
+.digit[data-digit="0"] .seg.a, .digit[data-digit="0"] .seg.b, .digit[data-digit="0"] .seg.c,
+.digit[data-digit="0"] .seg.d, .digit[data-digit="0"] .seg.e, .digit[data-digit="0"] .seg.f,
+.digit[data-digit="2"] .seg.a, .digit[data-digit="2"] .seg.b, .digit[data-digit="2"] .seg.d,
+.digit[data-digit="2"] .seg.e, .digit[data-digit="2"] .seg.g,
+.digit[data-digit="3"] .seg.a, .digit[data-digit="3"] .seg.b, .digit[data-digit="3"] .seg.c,
+.digit[data-digit="3"] .seg.d, .digit[data-digit="3"] .seg.g,
+.digit[data-digit="4"] .seg.b, .digit[data-digit="4"] .seg.c,
+.digit[data-digit="4"] .seg.f, .digit[data-digit="4"] .seg.g,
+.digit[data-digit="5"] .seg.a, .digit[data-digit="5"] .seg.c, .digit[data-digit="5"] .seg.d,
+.digit[data-digit="5"] .seg.f, .digit[data-digit="5"] .seg.g,
+.digit[data-digit="6"] .seg.a, .digit[data-digit="6"] .seg.c, .digit[data-digit="6"] .seg.d,
+.digit[data-digit="6"] .seg.e, .digit[data-digit="6"] .seg.f, .digit[data-digit="6"] .seg.g,
+.digit[data-digit="7"] .seg.a, .digit[data-digit="7"] .seg.b, .digit[data-digit="7"] .seg.c,
+.digit[data-digit="8"] .seg.a, .digit[data-digit="8"] .seg.b, .digit[data-digit="8"] .seg.c,
+.digit[data-digit="8"] .seg.d, .digit[data-digit="8"] .seg.e, .digit[data-digit="8"] .seg.f,
+.digit[data-digit="8"] .seg.g,
+.digit[data-digit="9"] .seg.a, .digit[data-digit="9"] .seg.b, .digit[data-digit="9"] .seg.c,
+.digit[data-digit="9"] .seg.d, .digit[data-digit="9"] .seg.f, .digit[data-digit="9"] .seg.g,
+.digit[data-digit="-"] .seg.g,
+.digit[data-digit="1"] .seg.b, .digit[data-digit="1"] .seg.c {
+  background: var(--led-on);
+}
+
+/* ---------------------------------------------------------------- smiley */
+
+.smiley {
+  inline-size: 26px;
+  block-size: 26px;
+  padding: 0;
+  background-color: #ffff00;
+  border: 2px solid;
+  border-color: var(--light) var(--dark2) var(--dark2) var(--light);
+  box-shadow: inset 1px 1px 0 var(--light2), inset -1px -1px 0 var(--dark);
+  background-repeat: no-repeat;
+}
+
+.smiley:active {
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: inset 1px 1px 0 var(--dark);
+}
+
+/* face layers paint into the 22x22 content box (background-clip: padding-box) */
+.smiley { background-clip: padding-box; }
+
+.smiley.normal {
+  background-image:
+    radial-gradient(circle at 31% 38%, #000000 1.4px, transparent 1.7px),
+    radial-gradient(circle at 69% 38%, #000000 1.4px, transparent 1.7px),
+    radial-gradient(13px 9px at 50% 28%, transparent 6.5px, #000000 6.9px 8px, transparent 8.5px);
+}
+
+.smiley.ooh {
+  background-image:
+    radial-gradient(circle at 31% 38%, #000000 1.4px, transparent 1.7px),
+    radial-gradient(circle at 69% 38%, #000000 1.4px, transparent 1.7px),
+    radial-gradient(circle at 50% 62%, transparent 2.4px, #000000 2.8px 4px, transparent 4.5px);
+}
+
+.smiley.dead {
+  background-image:
+    linear-gradient(45deg, transparent 44%, #000000 44% 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, #000000 44% 56%, transparent 56%),
+    linear-gradient(45deg, transparent 44%, #000000 44% 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, #000000 44% 56%, transparent 56%),
+    radial-gradient(13px 9px at 50% 74%, transparent 6.5px, #000000 6.9px 8px, transparent 8.5px);
+  background-size: 7px 7px, 7px 7px, 7px 7px, 7px 7px, auto;
+  background-position: 4px 5px, 4px 5px, 11px 5px, 11px 5px, 0 0;
+}
+
+.smiley.cool {
+  background-image:
+    linear-gradient(#000000 0 0),
+    radial-gradient(13px 9px at 50% 28%, transparent 6.5px, #000000 6.9px 8px, transparent 8.5px);
+  background-size: 16px 4px, auto;
+  background-position: 3px 6px, 0 0;
+}
+
+/* ----------------------------------------------------------------- board */
+
+.board {
+  --cell: 16px;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 9), var(--cell, 16px));
+  grid-auto-rows: var(--cell, 16px);
+  gap: 0;
+  padding: 6px;
+  inline-size: max-content;
+  max-inline-size: 100%;
+  background: var(--face);
+  border: 3px solid;
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: inset 1px 1px 0 var(--dark), inset -1px -1px 0 var(--light2);
+  user-select: none;
+}
+
+.cell {
+  inline-size: 16px;
+  block-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+  background-color: var(--face);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 13px;
+  user-select: none;
+}
+
+.cell.covered {
+  border: 2px solid;
+  border-color: var(--light) var(--dark2) var(--dark2) var(--light);
+  box-shadow: inset 1px 1px 0 var(--light2), inset -1px -1px 0 var(--dark);
+}
+
+.cell.pressed {
+  border: 2px solid;
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: none;
+}
+
+.cell.revealed {
+  border: 1px solid var(--dark);
+  box-shadow: inset 1px 1px 0 var(--dark2);
+}
+
+/* question mark is pure CSS text, no textContent needed */
+.cell.question::after {
+  content: "?";
+  color: #0000ff;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.cell.flagged {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 13 13'%3E%3Cpath d='M4 1v11h-1V1z' fill='%23000'/%3E%3Cpath d='M5 1l6 3-6 3z' fill='%23ff0000'/%3E%3C/svg%3E");
+}
+
+.cell.mine {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 13 13'%3E%3Cg stroke='%23000' stroke-width='1.5'%3E%3Cline x1='6.5' y1='1' x2='6.5' y2='12'/%3E%3Cline x1='1' y1='6.5' x2='12' y2='6.5'/%3E%3Cline x1='2.6' y1='2.6' x2='10.4' y2='10.4'/%3E%3Cline x1='10.4' y1='2.6' x2='2.6' y2='10.4'/%3E%3C/g%3E%3Ccircle cx='6.5' cy='6.5' r='3.4' fill='%23000'/%3E%3Ccircle cx='5.2' cy='5.2' r='1' fill='%23fff'/%3E%3C/svg%3E");
+}
+
+.cell.exploded {
+  background-color: #ff0000;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 13 13'%3E%3Cg stroke='%23000' stroke-width='1.5'%3E%3Cline x1='6.5' y1='1' x2='6.5' y2='12'/%3E%3Cline x1='1' y1='6.5' x2='12' y2='6.5'/%3E%3Cline x1='2.6' y1='2.6' x2='10.4' y2='10.4'/%3E%3Cline x1='10.4' y1='2.6' x2='2.6' y2='10.4'/%3E%3C/g%3E%3Ccircle cx='6.5' cy='6.5' r='3.4' fill='%23000'/%3E%3Ccircle cx='5.2' cy='5.2' r='1' fill='%23fff'/%3E%3C/svg%3E");
+}
+
+.cell.wrongflag {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 13 13'%3E%3Cg stroke='%23000' stroke-width='1.5'%3E%3Cline x1='6.5' y1='1' x2='6.5' y2='12'/%3E%3Cline x1='1' y1='6.5' x2='12' y2='6.5'/%3E%3Cline x1='2.6' y1='2.6' x2='10.4' y2='10.4'/%3E%3Cline x1='10.4' y1='2.6' x2='2.6' y2='10.4'/%3E%3C/g%3E%3Ccircle cx='6.5' cy='6.5' r='3.4' fill='%23000'/%3E%3Cg stroke='%23ff0000' stroke-width='1.8'%3E%3Cline x1='1.5' y1='1.5' x2='11.5' y2='11.5'/%3E%3Cline x1='11.5' y1='1.5' x2='1.5' y2='11.5'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* classic number colors — classes go on the .cell itself (.cell.n1..n8);
+   bare .n1..n8 selectors kept for compatibility */
+.cell.n1, .n1 { color: #0000ff; }
+.cell.n2, .n2 { color: #008000; }
+.cell.n3, .n3 { color: #ff0000; }
+.cell.n4, .n4 { color: #000080; }
+.cell.n5, .n5 { color: #800000; }
+.cell.n6, .n6 { color: #008080; }
+.cell.n7, .n7 { color: #000000; }
+.cell.n8, .n8 { color: #808080; }
+
+/* --------------------------------------------------------------- dialogs */
+
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.dialog-window {
+  inline-size: max-content;
+  max-inline-size: calc(100dvi - 32px);
+  background: var(--face);
+  border: 3px solid;
+  border-color: var(--light) var(--dark2) var(--dark2) var(--light);
+  box-shadow:
+    inset 1px 1px 0 var(--light2),
+    inset -1px -1px 0 var(--dark),
+    3px 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 3px;
+  padding: 10px;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: inset 1px 1px 0 var(--dark), inset -1px -1px 0 var(--light2);
+}
+
+.dialog-text { margin: 0; max-inline-size: 340px; }
+.dialog-text ul { margin: 6px 0 0; padding-inline-start: 18px; }
+.dialog-text li { margin-block: 4px; }
+
+.dialog-fields {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 200px;
+}
+
+.dialog-fields label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dialog-fields input {
+  inline-size: 60px;
+  padding: 2px 4px;
+  font: inherit;
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid;
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+}
+
+.dialog-fields input:focus { outline: 1px dotted #000000; outline-offset: -1px; }
+
+.dialog-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dialog-buttons button {
+  min-inline-size: 60px;
+  min-block-size: 23px;
+  padding: 2px 10px;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--light) var(--dark2) var(--dark2) var(--light);
+  box-shadow: inset 1px 1px 0 var(--light2), inset -1px -1px 0 var(--dark);
+}
+
+.dialog-buttons button:hover,
+.dialog-buttons button:focus-visible {
+  outline: 1px dotted #000000;
+  outline-offset: -4px;
+}
+
+.dialog-buttons button:active {
+  border-color: var(--dark2) var(--light) var(--light) var(--dark2);
+  box-shadow: inset 1px 1px 0 var(--dark);
+}
+
+.best-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  min-inline-size: 260px;
+}
+
+.best-list li {
+  display: grid;
+  grid-template-columns: 90px 40px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.best-time { text-align: end; font-weight: bold; }
