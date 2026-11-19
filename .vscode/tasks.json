@@ -1,0 +1,102 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Codex: issue to PR - plan",
+      "type": "process",
+      "command": "python3",
+      "windows": {
+        "command": "C:\\Users\\gaelc\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\python.exe",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "PATH": "C:\\Users\\gaelc\\.codex\\packages\\standalone\\current\\bin;${env:PATH}"
+          }
+        }
+      },
+      "args": [
+        "${workspaceFolder}/.codex/issue-to-pr/runner.py",
+        "${input:codexIssueNumber}",
+        "--plan"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "label": "Codex: issue to PR - run",
+      "type": "process",
+      "command": "python3",
+      "windows": {
+        "command": "C:\\Users\\gaelc\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\python.exe",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "PATH": "C:\\Users\\gaelc\\.codex\\packages\\standalone\\current\\bin;${env:PATH}"
+          }
+        }
+      },
+      "args": [
+        "${workspaceFolder}/.codex/issue-to-pr/runner.py",
+        "${input:codexIssueNumber}",
+        "--run"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "label": "Codex: issue to PR - publish verified draft",
+      "type": "process",
+      "command": "python3",
+      "windows": {
+        "command": "C:\\Users\\gaelc\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\python.exe",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "PATH": "C:\\Users\\gaelc\\.codex\\packages\\standalone\\current\\bin;${env:PATH}"
+          }
+        }
+      },
+      "args": [
+        "${workspaceFolder}/.codex/issue-to-pr/runner.py",
+        "${input:codexIssueNumber}",
+        "--publish"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "codexIssueNumber",
+      "type": "promptString",
+      "description": "GitHub issue number (for example, 42)"
+    }
+  ]
+}

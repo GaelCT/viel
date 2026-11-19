@@ -1,0 +1,53 @@
+name: Codex agent task
+description: A bounded issue for the Codex issue-to-PR controller.
+title: "[Agent task]: "
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: One observable outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Required context
+      description: List relevant repository documents and files. Remote sources must be supplied locally for the bounded worker.
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Scope boundaries
+      description: Literal repository files or directory prefixes; no glob patterns. Include tests when they may change.
+      value: |
+        In scope:
+        - engine.js
+        - app.js
+        - index.html
+        - style.css
+        - test/
+        - e2e/
+
+        Out of scope:
+        -
+
+        Prohibited actions:
+        - No new dependencies.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List independently verifiable behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification commands
+      description: One command per line, matching verify_commands or allowed_issue_commands in config.json. Use argument lists without shell operators.
+      render: shell
+      value: node --test "test/*.test.js"
+    validations:
+      required: true

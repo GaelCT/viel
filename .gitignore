@@ -1,0 +1,10 @@
+/artifacts/issue-to-pr/
+/.issue-to-pr-worktrees/
+
+# Downloaded workflow kit and local evaluation evidence.
+/codex-issue-to-pr-kit-0.4.zip
+/codex-issue-to-pr-kit/
+/node_modules/
+/artifacts/browser/
+/test-results/
+/playwright-report/

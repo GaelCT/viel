@@ -1,0 +1,83 @@
+{
+  "base_branch": "codex/workflow-setup",
+  "verify_commands": [
+    [
+      "node",
+      "--test",
+      "test/*.test.js"
+    ]
+  ],
+  "allowed_issue_commands": [],
+  "browser_command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test"
+  ],
+  "ui_paths": [
+    "index.html",
+    "style.css",
+    "app.js",
+    "challenge.js"
+  ],
+  "max_rounds": 3,
+  "timeout_seconds": 1800,
+  "models": {
+    "intake": "",
+    "build": "",
+    "review": "",
+    "verify": ""
+  },
+  "sensitive_paths": {
+    "authorization": [
+      "auth/*",
+      "*/auth/*",
+      "*/auth.*",
+      "*/permissions/*",
+      "*/roles/*"
+    ],
+    "infrastructure": [
+      ".github/*",
+      "infra/*",
+      "infrastructure/*",
+      "terraform/*",
+      "deploy/*",
+      "Dockerfile",
+      "*/Dockerfile",
+      "docker-compose*"
+    ],
+    "user-data": [
+      "migrations/*",
+      "*/migrations/*",
+      "schema/*",
+      "*/schema/*"
+    ],
+    "external-writes": [],
+    "shared-contracts": [
+      "contracts/*",
+      "openapi/*",
+      "proto/*"
+    ],
+    "agent-gates": [
+      ".codex/*",
+      ".agents/*",
+      ".claude/*",
+      ".vscode/*",
+      "AGENTS.md",
+      "*/AGENTS.md",
+      "CLAUDE.md",
+      "Makefile",
+      "package.json",
+      "package-lock.json",
+      "pyproject.toml",
+      "pytest.ini",
+      "tox.ini",
+      "tsconfig*",
+      "vite.config.*",
+      "vitest.config.*",
+      "playwright.config.*",
+      ".gitmodules",
+      ".gitattributes",
+      ".gitignore"
+    ]
+  }
+}
