@@ -117,6 +117,40 @@ test('reload restores question marks, disabled marks, counter and active time wi
   await expect(cell(page, 4)).not.toHaveClass(/flagged|question/);
 });
 
+test('active fractions survive repeated visibility changes and elapsed seconds survive reload', async ({ page }) => {
+  const time = new Date('2026-01-01T00:00:00Z');
+  await page.clock.install({ time });
+  await page.clock.pauseAt(new Date('2026-01-01T00:01:00Z'));
+  await page.goto('/'); await importCode(page);
+  const setHidden = hidden => page.evaluate(hidden => {
+    // Simulate the visibility state already having changed when the browser
+    // dispatches the event; the clock itself runs through real app handlers.
+    Object.defineProperty(document, 'hidden', { configurable: true, value: hidden });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, hidden);
+  let active = 0;
+  for (const duration of [600, 600, 950, 950, 950, 950]) {
+    await page.clock.runFor(duration);
+    active += duration;
+    await setHidden(true);
+    const seconds = Math.floor(active / 1000);
+    expect(Number(await led(page, 'timer'))).toBe(seconds);
+    expect(JSON.parse(await stored(page, C.SESSION_KEY)).elapsed).toBe(seconds);
+    await page.clock.runFor(10000);
+    expect(Number(await led(page, 'timer'))).toBe(seconds);
+    await setHidden(false);
+    expect(Number(await led(page, 'timer'))).toBe(seconds);
+  }
+  // The 50ms tails after the last ticks must also count: total active = 5s.
+  expect(Number(await led(page, 'timer'))).toBe(5);
+  await cell(page, 0).click({ button: 'right' });
+  expect(JSON.parse(await stored(page, C.SESSION_KEY)).actions.at(-1).elapsed).toBe(5);
+  await page.reload();
+  expect(Number(await led(page, 'timer'))).toBe(5);
+  expect(JSON.parse(await stored(page, C.SESSION_KEY)).elapsed).toBe(5);
+  await expect(cell(page, 0)).toHaveClass(/flagged/);
+});
+
 test('UI win with marks and chord replays step/play/pause/restart/end, keeps history and classic records isolated', async ({ page }) => {
   await page.clock.install();
   await page.goto('/');

@@ -44,6 +44,7 @@
   let replay = null;
   let clockBaseline = performance.now();
   let fractionalTime = 0;
+  let clockVisible = !document.hidden;
 
   function notice(message) { $('challenge-notice').textContent = message; }
   function storage(method, key, value) {
@@ -69,10 +70,14 @@
     marksItem.setAttribute('aria-checked', String(marksEnabled));
     marksItem.querySelector('.check').textContent = marksEnabled ? '\u2713' : '';
   }
-  function resetClock() { clockBaseline = performance.now(); fractionalTime = 0; }
+  function resetClock() {
+    clockBaseline = performance.now();
+    fractionalTime = 0;
+    clockVisible = !document.hidden;
+  }
   function updateClock() {
     const now = performance.now();
-    if (mode === 'challenge' && game.state === 'playing' && !document.hidden) {
+    if (mode === 'challenge' && game.state === 'playing' && clockVisible) {
       fractionalTime += now - clockBaseline;
       const seconds = Math.floor(fractionalTime / 1000);
       if (seconds) {
@@ -686,8 +691,11 @@
   }, 100);
   window.addEventListener('pagehide', () => { updateClock(); persist(); });
   document.addEventListener('visibilitychange', () => {
-    // Hidden time is paused; page exit and reload cannot count offline time.
-    resetClock(); persist();
+    // Settle the previous visible interval before pausing. Keep its fraction
+    // across tab switches, and reset only the baseline to exclude hidden time.
+    updateClock();
+    clockVisible = !document.hidden;
+    persist();
   });
   // Classic keeps its existing capped clock. Challenges keep full active seconds.
   setInterval(() => {
