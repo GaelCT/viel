@@ -38,6 +38,21 @@ SCHEMA = {
     },
 }
 SCHEMA["required"] = list(SCHEMA["properties"])
+SCHEMA["properties"]["status"]["description"] = (
+    "Pass only if every responsibility assigned to this stage is complete and both findings and not_checked are empty. "
+    "A stage pass is not a claim that later workflow stages are complete."
+)
+SCHEMA["properties"]["findings"] = {
+    **STRINGS,
+    "description": "Only actionable defects or blockers that must be fixed before this stage can pass. "
+    "Must be empty for pass. Put planning observations, future implementation work, handled risks and nonblocking warnings in plan, checked or summary."
+}
+SCHEMA["properties"]["not_checked"] = {
+    **STRINGS,
+    "description": "Required checks assigned to this stage that could not be completed. Must be empty for pass. "
+    "Intake does not implement or execute acceptance tests; those future checks belong in its plan. "
+    "The final verifier must list every acceptance criterion lacking supporting evidence here."
+}
 
 
 class Stop(Exception):
