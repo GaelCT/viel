@@ -506,3 +506,23 @@ button {
 }
 
 .best-time { text-align: end; font-weight: bold; }
+
+/* Keep the classic bevels while allowing expert boards and dialogs to scroll. */
+body { padding: 8px; }
+.window { min-inline-size: 180px; }
+.board-scroll { max-inline-size: 100%; overflow: auto; }
+.board { inline-size: max-content; }
+.mode-status { margin: 2px 4px; max-inline-size: 340px; overflow-wrap: anywhere; }
+.mode-status:empty { display: none; }
+#replay-controls { max-inline-size: 400px; padding: 4px; }
+#replay-controls p { margin: 4px 0; }
+.dialog-buttons { flex-wrap: wrap; }
+.dialog-window { max-block-size: calc(100dvb - 24px); overflow: auto; }
+.dialog-body { min-inline-size: 0; }
+.dialog textarea { inline-size: 100%; min-inline-size: 0; resize: vertical; user-select: text; }
+.dialog textarea, .dialog select { font: inherit; padding: 4px; background: white; color: black; }
+.dialog textarea { min-block-size: 60px; }
+#history-list { margin: 0; padding-inline-start: 16px; max-inline-size: 380px; }
+#history-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-block: 6px; }
+.error { color: #800000; }
+button:disabled { color: #555; }
