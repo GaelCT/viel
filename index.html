@@ -69,6 +69,10 @@
       <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Game</button>
       <ul class="menu" role="menu" hidden>
         <li><button type="button" role="menuitem" data-action="new"><span class="check" aria-hidden="true"></span>New</button></li>
+        <li><button type="button" role="menuitem" data-action="daily"><span class="check" aria-hidden="true"></span>Daily Challenge&#8230;</button></li>
+        <li><button type="button" role="menuitem" data-action="share"><span class="check" aria-hidden="true"></span>Share Challenge&#8230;</button></li>
+        <li><button type="button" role="menuitem" data-action="import"><span class="check" aria-hidden="true"></span>Import Challenge&#8230;</button></li>
+        <li><button type="button" role="menuitem" data-action="history"><span class="check" aria-hidden="true"></span>Challenge History&#8230;</button></li>
         <li class="sep" aria-hidden="true"></li>
         <li><button type="button" role="menuitem" data-action="beginner"><span class="check" aria-hidden="true"></span>Beginner</button></li>
         <li><button type="button" role="menuitem" data-action="intermediate"><span class="check" aria-hidden="true"></span>Intermediate</button></li>
@@ -104,6 +108,21 @@
     </div>
   </section>
 
+  <p id="challenge-status" class="mode-status">Classic game</p>
+  <p id="challenge-notice" class="mode-status" role="status"></p>
+  <button type="button" id="challenge-replay" class="raised" hidden>Replay finished challenge</button>
+  <section id="replay-controls" aria-label="Replay controls" hidden>
+    <p>Replay: exit before starting or changing games.</p>
+    <div class="dialog-buttons">
+      <button type="button" id="replay-play">Play</button>
+      <button type="button" id="replay-pause">Pause</button>
+      <button type="button" id="replay-step">Step forward</button>
+      <button type="button" id="replay-restart">Restart replay</button>
+      <button type="button" id="replay-exit">Exit replay</button>
+    </div>
+    <p id="replay-progress" role="status"></p>
+  </section>
+  <div class="board-scroll" tabindex="0" aria-label="Scrollable minefield">
   <main id="board" class="board" style="--cols:9; --rows:9;" aria-label="Minefield">
     <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
     <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
@@ -115,6 +134,7 @@
     <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
     <div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div><div class="cell covered"></div>
   </main>
+  </div>
 </div>
 
 <div class="dialog" id="dialog-custom" role="dialog" aria-modal="true" aria-labelledby="dialog-custom-title" hidden>
@@ -176,7 +196,12 @@
           <li>A revealed <strong>number</strong> counts the mines in the 8 surrounding squares.</li>
           <li><strong>Right-click</strong> a covered square to cycle: flag &#8594; question mark &#8594; covered. Flags mark suspected mines; turn off &quot;Marks (?)&quot; in the Game menu to skip the question mark.</li>
           <li><strong>Chord:</strong> left-click a revealed number whose flag count already matches it to reveal its remaining neighbors at once.</li>
-          <li>The <strong>smiley</strong> starts a new game in any situation.</li>
+          <li>The <strong>smiley / New</strong> restarts the current game. In a challenge it keeps the identical board. Difficulty / Custom starts a classic random game.</li>
+          <li><strong>Daily Challenge:</strong> choose a difficulty in Game. Each UTC date has a fixed board with an automatic safe center opening. Boards are not guaranteed guess-free.</li>
+          <li><strong>Share / Import Challenge:</strong> copy a code (manual copy works offline), then import it to play the same board. Codes contain no moves or player data.</li>
+          <li><strong>Resume:</strong> challenge moves, marks and active seconds save locally when storage is available. Reload resumes; hidden or closed time is paused. Classic records stay separate.</li>
+          <li><strong>Replay:</strong> after finishing, use play, pause, step or restart. Exit restores your live game. Board and New/difficulty controls are disabled during replay.</li>
+          <li><strong>Challenge History:</strong> replay or clear local results. Only the newest 30 attempts within 2 MiB are kept. Each attempt allows 4096 actions and one year of active seconds. No data leaves this browser.</li>
           <li>Difficulties: Beginner 9&#215;9 with 10 mines, Intermediate 16&#215;16 with 40 mines, Expert 30&#215;16 with 99 mines, plus Custom.</li>
         </ul>
       </div>
@@ -187,7 +212,51 @@
   </div>
 </div>
 
+<div class="dialog" id="dialog-daily" role="dialog" aria-modal="true" aria-labelledby="daily-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="daily-title">Daily Challenge</span></header>
+    <div class="dialog-body">
+      <p class="dialog-text">Today: <span id="daily-date"></span>. Safe center opening; guesses may be needed.</p>
+      <label for="daily-difficulty">Challenge difficulty</label>
+      <select id="daily-difficulty"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="expert">Expert</option></select>
+      <p class="dialog-text">Starting replaces the current game. New and the smiley restart this same board; choosing a classic difficulty leaves challenge mode.</p>
+      <div class="dialog-buttons"><button type="button" id="daily-start">Start challenge</button><button type="button" data-close="dialog-daily">Cancel</button></div>
+    </div>
+  </div>
+</div>
+<div class="dialog" id="dialog-share" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="share-title">Share Challenge</span></header>
+    <div class="dialog-body">
+      <label for="challenge-code">Challenge code</label><textarea id="challenge-code" readonly rows="3" spellcheck="false"></textarea>
+      <p id="copy-status" class="dialog-text" role="status"></p>
+      <div class="dialog-buttons"><button type="button" id="challenge-copy">Copy code</button><button type="button" data-close="dialog-share">Close</button></div>
+    </div>
+  </div>
+</div>
+<div class="dialog" id="dialog-import" role="dialog" aria-modal="true" aria-labelledby="import-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="import-title">Import Challenge</span></header>
+    <div class="dialog-body">
+      <label for="import-code">Paste challenge code</label><textarea id="import-code" rows="3" spellcheck="false"></textarea>
+      <p class="dialog-text">A valid code starts a fresh attempt and replaces the current game.</p>
+      <p id="import-error" class="dialog-text error" role="alert"></p>
+      <div class="dialog-buttons"><button type="button" id="import-start">Import and start</button><button type="button" data-close="dialog-import">Cancel</button></div>
+    </div>
+  </div>
+</div>
+<div class="dialog" id="dialog-history" role="dialog" aria-modal="true" aria-labelledby="history-title" hidden>
+  <div class="dialog-window">
+    <header class="title-bar"><span class="title" id="history-title">Challenge History</span></header>
+    <div class="dialog-body">
+      <p class="dialog-text">Local to this browser. Newest 30 finished attempts, up to 2 MiB. Clearing history keeps the current game.</p>
+      <ul id="history-list"></ul>
+      <div class="dialog-buttons"><button type="button" id="history-clear">Clear history</button><button type="button" data-close="dialog-history">Close</button></div>
+    </div>
+  </div>
+</div>
 <script src="engine.js"></script>
+<script src="challenge.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
